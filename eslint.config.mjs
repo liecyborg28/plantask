@@ -12,12 +12,14 @@ const compat = new FlatCompat({
 const eslintConfig = [
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
+    // Tambahkan 'app/generated/**' di sini untuk mengabaikan semua file di dalam folder generated
     ignores: [
       "node_modules/**",
       ".next/**",
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "app/generated/**",
     ],
   },
 ];
