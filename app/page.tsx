@@ -36,10 +36,14 @@ function List({
   handleEditTask,
   handleRemoveTask,
   handleMoveList,
+  loadingSuggestions,
 }: any) {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
   const [editingTaskTitle, setEditingTaskTitle] = useState("");
+
+  const listKey = `${categoryIndex}-${listIndex}`;
+  const isLoading = !!loadingSuggestions[listKey];
 
   return (
     <div className="card min-w-96 max-w-96 bg-base-100 shadow-sm max-h-min">
@@ -83,7 +87,6 @@ function List({
             </button>
           </div>
         </div>
-
         {/* Move List Dropdown */}
         <div className="mt-2">
           <select
@@ -99,9 +102,32 @@ function List({
             ))}
           </select>
         </div>
-
         {/* Task List */}
-        <ul className="mt-3 flex flex-col gap-2 text-xs overflow-auto max-h-30">
+        <ul className="mt-3 flex flex-col gap-2 text-xs">
+          <li className="flex items-center gap-2">
+            {isLoading && (
+              <span className="flex items-center gap-2 text-sm text-gray-300 italic">
+                <svg
+                  className="animate-spin h-4 w-4 text-gray-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8H4z"></path>
+                </svg>
+                Loading suggestions...
+              </span>
+            )}
+          </li>
           {item.tasks.map((task: TaskModel, i: number) => (
             <li key={i} className="flex items-center gap-2">
               <input
@@ -173,30 +199,35 @@ function List({
             </li>
           ))}
         </ul>
-
         {/* Add Task */}
-        <div className="mt-3 flex gap-2">
-          <input
-            value={newTaskTitle}
-            onChange={(e) => setNewTaskTitle(e.target.value)}
-            type="text"
-            placeholder="New task..."
-            className="input input-sm input-bordered flex-1"
-          />
-          <button
-            onClick={() => {
-              if (newTaskTitle.trim()) {
-                handleAddTaskToList(
-                  categoryIndex,
-                  listIndex,
-                  newTaskTitle.trim()
-                );
-                setNewTaskTitle("");
-              }
-            }}
-            className="btn btn-sm btn-primary">
-            + Add Task
-          </button>
+        <div className="mt-3 flex flex-col gap-1">
+          <div className="flex gap-2">
+            <input
+              value={newTaskTitle}
+              onChange={(e) => setNewTaskTitle(e.target.value)}
+              type="text"
+              placeholder="New task..."
+              className="input input-sm input-bordered flex-1"
+              disabled={isLoading}
+            />
+            <button
+              disabled={isLoading}
+              className={`btn btn-sm btn-primary ${
+                isLoading ? "btn-disabled" : ""
+              }`}
+              onClick={() => {
+                if (newTaskTitle.trim()) {
+                  handleAddTaskToList(
+                    categoryIndex,
+                    listIndex,
+                    newTaskTitle.trim()
+                  );
+                  setNewTaskTitle("");
+                }
+              }}>
+              + Add Task
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -224,6 +255,11 @@ export default function Lists() {
     list: number;
   } | null>(null);
   const [editingListTitle, setEditingListTitle] = useState("");
+
+  // Loading suggestions per list
+  const [loadingSuggestions, setLoadingSuggestions] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   useEffect(() => {
     localStorage.setItem("lists_data", JSON.stringify(categories));
@@ -258,26 +294,10 @@ export default function Lists() {
   }
 
   // List Actions
-  // function handleAddList(categoryIndex: number) {
-  //   const title = listTitles[categoryIndex] || "";
-  //   if (!title.trim()) return;
-
-  //   const newList: ListModel = { title, tasks: [] };
-
-  //   setCategories((prev) =>
-  //     prev.map((cat, i) =>
-  //       i === categoryIndex ? { ...cat, lists: [...cat.lists, newList] } : cat
-  //     )
-  //   );
-
-  //   setListTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
-  // }
-
   async function handleAddList(categoryIndex: number) {
     const title = listTitles[categoryIndex] || "";
     if (!title.trim()) return;
 
-    // Tambahkan list kosong terlebih dahulu
     const newList: ListModel = { title, tasks: [] };
     setCategories((prev) =>
       prev.map((cat, i) =>
@@ -286,34 +306,31 @@ export default function Lists() {
     );
     setListTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
 
-    // ======== Prompt AI untuk generate tasks ========
+    const listKey = `${categoryIndex}-${
+      categories[categoryIndex]?.lists.length || 0
+    }`;
+    setLoadingSuggestions((prev) => ({ ...prev, [listKey]: true }));
+
     const prompt = `
-    Buatkan 3 sampai 5 task sederhana untuk daftar dengan judul: "${title}".
-    Gunakan bahasa yang sama dengan judul list.
-    Format output hanya array JSON murni, contoh:
-    ["Task 1", "Task 2", "Task 3"]
-  `;
+      Buatkan 3 sampai 5 task sederhana untuk daftar dengan judul: "${title}".
+      Gunakan bahasa yang sama dengan judul list.
+      Format output hanya array JSON murni, contoh:
+      ["Task 1", "Task 2", "Task 3"]
+    `;
 
     try {
       const res = await axios.post("/api/gemini", { prompt });
       let tasks: string[] = [];
       const text: string = res.data?.text || "";
 
-      if (text) {
+      const jsonMatch = text.match(/\[[\s\S]*?\]/);
+      if (jsonMatch) {
         try {
-          tasks = JSON.parse(text);
-        } catch {
-          // fallback jika output AI tidak valid JSON
-          tasks = text
-            .replace(/[\[\]]/g, "")
-            .split("\n")
-            .map((t: string) => t.replace(/["',]/g, "").trim())
-            .filter(Boolean);
-        }
+          tasks = JSON.parse(jsonMatch[0]);
+        } catch {}
       }
 
       if (tasks.length > 0) {
-        // update list terakhir di category dengan tasks dari AI
         setCategories((prev) =>
           prev.map((cat, i) =>
             i === categoryIndex
@@ -335,8 +352,10 @@ export default function Lists() {
           )
         );
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetch Gemini:", error);
+    } finally {
+      setLoadingSuggestions((prev) => ({ ...prev, [listKey]: false }));
     }
   }
 
@@ -516,7 +535,7 @@ export default function Lists() {
         </div>
 
         {/* Categories */}
-        <div className="flex flex-row gap-6 p-4 w-full h-[calc(100vh)] overflow-auto">
+        <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
           {categories.length < 1 && (
             <div className="w-full flex justify-center items-center text-3xl">
               You haven’t created any lists yet
@@ -539,39 +558,48 @@ export default function Lists() {
                   {editingCategoryIndex === catIdx ? (
                     <button
                       onClick={() => handleEditCategory(catIdx)}
-                      className="btn btn-sm btn-success">
+                      className="btn btn-sm btn-success btn-outline">
                       Save
                     </button>
                   ) : (
                     <button
                       onClick={() => handleStartEditCategory(catIdx)}
-                      className="btn btn-sm btn-warning">
+                      className="btn btn-sm btn-warning btn-outline">
                       Edit
                     </button>
                   )}
 
                   <button
                     onClick={() => handleRemoveCategory(catIdx)}
-                    className="btn btn-sm btn-error">
+                    className="btn btn-sm btn-error btn-outline">
                     Remove
                   </button>
                 </div>
               </div>
 
               {/* Add List */}
-              <div className="flex gap-2">
-                <input
-                  value={listTitles[catIdx] || ""}
-                  onChange={(e) =>
-                    setListTitles((prev) => ({
-                      ...prev,
-                      [catIdx]: e.target.value,
-                    }))
-                  }
-                  type="text"
-                  placeholder="New list title..."
-                  className="input input-bordered input-sm flex-1"
-                />
+              <div className="flex gap-3 items-center mt-5">
+                <div className="flex w-full gap-1">
+                  <input
+                    value={listTitles[catIdx] || ""}
+                    onChange={(e) =>
+                      setListTitles((prev) => ({
+                        ...prev,
+                        [catIdx]: e.target.value,
+                      }))
+                    }
+                    type="text"
+                    placeholder="New list title..."
+                    className="input input-bordered input-sm flex-1"
+                  />
+                  <div
+                    className="tooltip"
+                    data-tip="AI will suggest tasks automatically whenever you create a new list!">
+                    <div className="w-4 h-4 text-xs text-white border border-white rounded-full flex justify-center items-center cursor-pointer">
+                      i
+                    </div>
+                  </div>
+                </div>
                 <button
                   onClick={() => handleAddList(catIdx)}
                   className="btn btn-sm btn-primary">
@@ -598,6 +626,7 @@ export default function Lists() {
                   handleEditTask={handleEditTask}
                   handleRemoveTask={handleRemoveTask}
                   handleMoveList={handleMoveList}
+                  loadingSuggestions={loadingSuggestions}
                 />
               ))}
             </div>

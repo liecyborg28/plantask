@@ -68,7 +68,7 @@ export const loadUserFromStorage = createAsyncThunk(
 
 export const logout = createAsyncThunk("auth/logout", async () => {
   if (typeof window !== "undefined") {
-    localStorage.clear();
+    localStorage.removeItem("user");
     location.href = "/auth/login";
   }
   return null;
