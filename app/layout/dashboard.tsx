@@ -58,7 +58,7 @@ export default function DashboardLayout({
         <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
           <li
             className={pathname.startsWith("/") ? "bg-primary text-white" : ""}>
-            <Link href="/">Boards</Link>
+            <Link href="/">My Board</Link>
           </li>
           <li>
             <a onClick={handleLogout}>Logout</a>

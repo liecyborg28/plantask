@@ -4,7 +4,7 @@
 import { useState, useEffect } from "react";
 import PrivateComponent from "@/app/routes/private";
 
-export interface BoardModel {
+export interface ListModel {
   title: string;
   tasks: TaskModel[];
 }
@@ -16,23 +16,25 @@ export interface TaskModel {
 
 export interface CategoryModel {
   title: string;
-  boards: BoardModel[];
+  lists: ListModel[];
 }
 
-function Board({
+function List({
   item,
-  boardIndex,
+  listIndex,
   categoryIndex,
-  editingBoardIndex,
-  editingBoardTitle,
-  setEditingBoardTitle,
-  handleStartEditBoard,
-  handleEditBoard,
-  handleRemoveBoard,
-  handleAddTaskToBoard,
+  categories,
+  editingListIndex,
+  editingListTitle,
+  setEditingListTitle,
+  handleStartEditList,
+  handleEditList,
+  handleRemoveList,
+  handleAddTaskToList,
   handleToggleTaskDone,
   handleEditTask,
   handleRemoveTask,
+  handleMoveList,
 }: any) {
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
@@ -42,13 +44,13 @@ function Board({
     <div className="card min-w-96 max-w-96 bg-base-100 shadow-sm max-h-min">
       <div className="card-body">
         <div className="flex justify-between items-center">
-          {/* Board Title */}
+          {/* List Title */}
           <span className="text-lg font-bold">
-            {editingBoardIndex?.cat === categoryIndex &&
-            editingBoardIndex?.board === boardIndex ? (
+            {editingListIndex?.cat === categoryIndex &&
+            editingListIndex?.list === listIndex ? (
               <input
-                value={editingBoardTitle}
-                onChange={(e) => setEditingBoardTitle(e.target.value)}
+                value={editingListTitle}
+                onChange={(e) => setEditingListTitle(e.target.value)}
                 className="input input-sm input-bordered"
               />
             ) : (
@@ -58,27 +60,43 @@ function Board({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {editingBoardIndex?.cat === categoryIndex &&
-            editingBoardIndex?.board === boardIndex ? (
+            {editingListIndex?.cat === categoryIndex &&
+            editingListIndex?.list === listIndex ? (
               <button
-                onClick={() => handleEditBoard(categoryIndex, boardIndex)}
+                onClick={() => handleEditList(categoryIndex, listIndex)}
                 className="btn btn-sm btn-success">
                 Save
               </button>
             ) : (
               <button
-                onClick={() => handleStartEditBoard(categoryIndex, boardIndex)}
+                onClick={() => handleStartEditList(categoryIndex, listIndex)}
                 className="btn btn-sm btn-warning">
                 Edit
               </button>
             )}
 
             <button
-              onClick={() => handleRemoveBoard(categoryIndex, boardIndex)}
+              onClick={() => handleRemoveList(categoryIndex, listIndex)}
               className="btn btn-sm btn-error">
               Remove
             </button>
           </div>
+        </div>
+
+        {/* Move List Dropdown */}
+        <div className="mt-2">
+          <select
+            className="select select-bordered select-xs w-full"
+            value={categoryIndex}
+            onChange={(e) =>
+              handleMoveList(categoryIndex, listIndex, Number(e.target.value))
+            }>
+            {categories.map((cat: CategoryModel, i: number) => (
+              <option key={i} value={i}>
+                {cat.title}
+              </option>
+            ))}
+          </select>
         </div>
 
         {/* Task List */}
@@ -89,7 +107,7 @@ function Board({
                 type="checkbox"
                 checked={task.is_done}
                 onChange={() =>
-                  handleToggleTaskDone(categoryIndex, boardIndex, i)
+                  handleToggleTaskDone(categoryIndex, listIndex, i)
                 }
                 className="checkbox checkbox-sm"
               />
@@ -106,7 +124,7 @@ function Board({
                       if (editingTaskTitle.trim()) {
                         handleEditTask(
                           categoryIndex,
-                          boardIndex,
+                          listIndex,
                           i,
                           editingTaskTitle.trim()
                         );
@@ -144,7 +162,7 @@ function Board({
                   </button>
                   <button
                     onClick={() =>
-                      handleRemoveTask(categoryIndex, boardIndex, i)
+                      handleRemoveTask(categoryIndex, listIndex, i)
                     }
                     className="btn btn-ghost btn-xs btn-circle text-error">
                     ❌
@@ -167,9 +185,9 @@ function Board({
           <button
             onClick={() => {
               if (newTaskTitle.trim()) {
-                handleAddTaskToBoard(
+                handleAddTaskToList(
                   categoryIndex,
-                  boardIndex,
+                  listIndex,
                   newTaskTitle.trim()
                 );
                 setNewTaskTitle("");
@@ -184,11 +202,10 @@ function Board({
   );
 }
 
-export default function Boards() {
-  // ✅ Load langsung dari localStorage saat inisialisasi
+export default function Lists() {
   const [categories, setCategories] = useState<CategoryModel[]>(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("boards_data");
+      const saved = localStorage.getItem("lists_data");
       return saved ? JSON.parse(saved) : [];
     }
     return [];
@@ -200,23 +217,21 @@ export default function Boards() {
   >(null);
   const [editingCategoryTitle, setEditingCategoryTitle] = useState("");
 
-  // boardTitles per kategori
-  const [boardTitles, setBoardTitles] = useState<{ [key: number]: string }>({});
-  const [editingBoardIndex, setEditingBoardIndex] = useState<{
+  const [listTitles, setListTitles] = useState<{ [key: number]: string }>({});
+  const [editingListIndex, setEditingListIndex] = useState<{
     cat: number;
-    board: number;
+    list: number;
   } | null>(null);
-  const [editingBoardTitle, setEditingBoardTitle] = useState("");
+  const [editingListTitle, setEditingListTitle] = useState("");
 
-  // ✅ Save ke localStorage tiap kali categories berubah
   useEffect(() => {
-    localStorage.setItem("boards_data", JSON.stringify(categories));
+    localStorage.setItem("lists_data", JSON.stringify(categories));
   }, [categories]);
 
   // Category Actions
   function handleAddCategory() {
     if (!categoryTitle.trim()) return;
-    const newCategory: CategoryModel = { title: categoryTitle, boards: [] };
+    const newCategory: CategoryModel = { title: categoryTitle, lists: [] };
     setCategories((prev) => [...prev, newCategory]);
     setCategoryTitle("");
   }
@@ -241,61 +256,85 @@ export default function Boards() {
     setEditingCategoryTitle("");
   }
 
-  // Board Actions
-  function handleAddBoard(categoryIndex: number) {
-    const title = boardTitles[categoryIndex] || "";
+  // List Actions
+  function handleAddList(categoryIndex: number) {
+    const title = listTitles[categoryIndex] || "";
     if (!title.trim()) return;
 
-    const newBoard: BoardModel = { title, tasks: [] };
+    const newList: ListModel = { title, tasks: [] };
 
     setCategories((prev) =>
       prev.map((cat, i) =>
-        i === categoryIndex
-          ? { ...cat, boards: [...cat.boards, newBoard] }
-          : cat
+        i === categoryIndex ? { ...cat, lists: [...cat.lists, newList] } : cat
       )
     );
 
-    setBoardTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
+    setListTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
   }
 
-  function handleRemoveBoard(categoryIndex: number, boardIndex: number) {
+  function handleRemoveList(categoryIndex: number, listIndex: number) {
     setCategories((prev) =>
       prev.map((cat, i) =>
         i === categoryIndex
-          ? { ...cat, boards: cat.boards.filter((_, b) => b !== boardIndex) }
+          ? { ...cat, lists: cat.lists.filter((_, b) => b !== listIndex) }
           : cat
       )
     );
   }
 
-  function handleStartEditBoard(categoryIndex: number, boardIndex: number) {
-    setEditingBoardIndex({ cat: categoryIndex, board: boardIndex });
-    setEditingBoardTitle(categories[categoryIndex].boards[boardIndex].title);
+  function handleStartEditList(categoryIndex: number, listIndex: number) {
+    setEditingListIndex({ cat: categoryIndex, list: listIndex });
+    setEditingListTitle(categories[categoryIndex].lists[listIndex].title);
   }
 
-  function handleEditBoard(categoryIndex: number, boardIndex: number) {
-    if (!editingBoardTitle.trim()) return;
+  function handleEditList(categoryIndex: number, listIndex: number) {
+    if (!editingListTitle.trim()) return;
     setCategories((prev) =>
       prev.map((cat, i) =>
         i === categoryIndex
           ? {
               ...cat,
-              boards: cat.boards.map((b, bi) =>
-                bi === boardIndex ? { ...b, title: editingBoardTitle } : b
+              lists: cat.lists.map((b, bi) =>
+                bi === listIndex ? { ...b, title: editingListTitle } : b
               ),
             }
           : cat
       )
     );
-    setEditingBoardIndex(null);
-    setEditingBoardTitle("");
+    setEditingListIndex(null);
+    setEditingListTitle("");
+  }
+
+  function handleMoveList(
+    fromCategory: number,
+    listIndex: number,
+    toCategory: number
+  ) {
+    if (fromCategory === toCategory) return;
+
+    const listToMove = categories[fromCategory].lists[listIndex];
+
+    setCategories((prev) => {
+      const updated = [...prev];
+
+      updated[fromCategory] = {
+        ...updated[fromCategory],
+        lists: updated[fromCategory].lists.filter((_, i) => i !== listIndex),
+      };
+
+      updated[toCategory] = {
+        ...updated[toCategory],
+        lists: [...updated[toCategory].lists, listToMove],
+      };
+
+      return updated;
+    });
   }
 
   // Task Actions
-  function handleAddTaskToBoard(
+  function handleAddTaskToList(
     categoryIndex: number,
-    boardIndex: number,
+    listIndex: number,
     taskTitle: string
   ) {
     setCategories((prev) =>
@@ -303,8 +342,8 @@ export default function Boards() {
         i === categoryIndex
           ? {
               ...cat,
-              boards: cat.boards.map((b, bi) =>
-                bi === boardIndex
+              lists: cat.lists.map((b, bi) =>
+                bi === listIndex
                   ? {
                       ...b,
                       tasks: [...b.tasks, { title: taskTitle, is_done: false }],
@@ -319,7 +358,7 @@ export default function Boards() {
 
   function handleToggleTaskDone(
     categoryIndex: number,
-    boardIndex: number,
+    listIndex: number,
     taskIndex: number
   ) {
     setCategories((prev) =>
@@ -327,8 +366,8 @@ export default function Boards() {
         i === categoryIndex
           ? {
               ...cat,
-              boards: cat.boards.map((b, bi) =>
-                bi === boardIndex
+              lists: cat.lists.map((b, bi) =>
+                bi === listIndex
                   ? {
                       ...b,
                       tasks: b.tasks.map((t, ti) =>
@@ -345,7 +384,7 @@ export default function Boards() {
 
   function handleEditTask(
     categoryIndex: number,
-    boardIndex: number,
+    listIndex: number,
     taskIndex: number,
     newTitle: string
   ) {
@@ -354,8 +393,8 @@ export default function Boards() {
         i === categoryIndex
           ? {
               ...cat,
-              boards: cat.boards.map((b, bi) =>
-                bi === boardIndex
+              lists: cat.lists.map((b, bi) =>
+                bi === listIndex
                   ? {
                       ...b,
                       tasks: b.tasks.map((t, ti) =>
@@ -372,7 +411,7 @@ export default function Boards() {
 
   function handleRemoveTask(
     categoryIndex: number,
-    boardIndex: number,
+    listIndex: number,
     taskIndex: number
   ) {
     setCategories((prev) =>
@@ -380,8 +419,8 @@ export default function Boards() {
         i === categoryIndex
           ? {
               ...cat,
-              boards: cat.boards.map((b, bi) =>
-                bi === boardIndex
+              lists: cat.lists.map((b, bi) =>
+                bi === listIndex
                   ? { ...b, tasks: b.tasks.filter((_, ti) => ti !== taskIndex) }
                   : b
               ),
@@ -410,9 +449,14 @@ export default function Boards() {
 
         {/* Categories */}
         <div className="flex flex-row gap-6 p-4 w-full h-[calc(100vh)] overflow-auto">
+          {categories.length < 1 && (
+            <div className="w-full flex justify-center items-center text-3xl">
+              You haven’t created any lists yet
+            </div>
+          )}
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="flex flex-col gap-3 min-w-[400px]">
-              <div className="flex justify-between items-center">
+              <div className="flex gap-2 justify-between items-center">
                 {editingCategoryIndex === catIdx ? (
                   <input
                     value={editingCategoryTitle}
@@ -446,44 +490,46 @@ export default function Boards() {
                 </div>
               </div>
 
-              {/* Add Board */}
+              {/* Add List */}
               <div className="flex gap-2">
                 <input
-                  value={boardTitles[catIdx] || ""}
+                  value={listTitles[catIdx] || ""}
                   onChange={(e) =>
-                    setBoardTitles((prev) => ({
+                    setListTitles((prev) => ({
                       ...prev,
                       [catIdx]: e.target.value,
                     }))
                   }
                   type="text"
-                  placeholder="New board title..."
+                  placeholder="New list title..."
                   className="input input-bordered input-sm flex-1"
                 />
                 <button
-                  onClick={() => handleAddBoard(catIdx)}
+                  onClick={() => handleAddList(catIdx)}
                   className="btn btn-sm btn-primary">
-                  + Add Board
+                  + Add List
                 </button>
               </div>
 
-              {/* Boards */}
-              {cat.boards.map((b, bIdx) => (
-                <Board
+              {/* Lists */}
+              {cat.lists.map((b, bIdx) => (
+                <List
                   key={bIdx}
                   categoryIndex={catIdx}
-                  boardIndex={bIdx}
+                  listIndex={bIdx}
                   item={b}
-                  editingBoardIndex={editingBoardIndex}
-                  editingBoardTitle={editingBoardTitle}
-                  setEditingBoardTitle={setEditingBoardTitle}
-                  handleStartEditBoard={handleStartEditBoard}
-                  handleEditBoard={handleEditBoard}
-                  handleRemoveBoard={handleRemoveBoard}
-                  handleAddTaskToBoard={handleAddTaskToBoard}
+                  categories={categories}
+                  editingListIndex={editingListIndex}
+                  editingListTitle={editingListTitle}
+                  setEditingListTitle={setEditingListTitle}
+                  handleStartEditList={handleStartEditList}
+                  handleEditList={handleEditList}
+                  handleRemoveList={handleRemoveList}
+                  handleAddTaskToList={handleAddTaskToList}
                   handleToggleTaskDone={handleToggleTaskDone}
                   handleEditTask={handleEditTask}
                   handleRemoveTask={handleRemoveTask}
+                  handleMoveList={handleMoveList}
                 />
               ))}
             </div>
