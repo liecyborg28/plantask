@@ -1,103 +1,506 @@
-import Image from "next/image";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-export default function Home() {
+import { useState } from "react";
+import PrivateComponent from "@/app/routes/private";
+
+export interface BoardModel {
+  title: string;
+  tasks: TaskModel[];
+}
+
+export interface TaskModel {
+  title: string;
+  is_done: boolean;
+}
+
+export interface CategoryModel {
+  title: string;
+  boards: BoardModel[];
+}
+
+function Board({
+  item,
+  boardIndex,
+  categoryIndex,
+  editingBoardIndex,
+  editingBoardTitle,
+  setEditingBoardTitle,
+  handleStartEditBoard,
+  handleEditBoard,
+  handleRemoveBoard,
+  handleAddTaskToBoard,
+  handleToggleTaskDone,
+  handleEditTask,
+  handleRemoveTask,
+}: any) {
+  const [newTaskTitle, setNewTaskTitle] = useState("");
+  const [editingTaskIndex, setEditingTaskIndex] = useState<number | null>(null);
+  const [editingTaskTitle, setEditingTaskTitle] = useState("");
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="card min-w-96 max-w-96 bg-base-100 shadow-sm max-h-min">
+      <div className="card-body">
+        <div className="flex justify-between items-center">
+          {/* Board Title */}
+          <span className="text-lg font-bold">
+            {editingBoardIndex === boardIndex ? (
+              <input
+                value={editingBoardTitle}
+                onChange={(e) => setEditingBoardTitle(e.target.value)}
+                className="input input-sm input-bordered"
+              />
+            ) : (
+              item.title
+            )}
+          </span>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+          {/* Actions */}
+          <div className="flex items-center gap-2">
+            {editingBoardIndex === boardIndex ? (
+              <button
+                onClick={() => handleEditBoard(categoryIndex, boardIndex)}
+                className="btn btn-sm btn-success">
+                Save
+              </button>
+            ) : (
+              <button
+                onClick={() => handleStartEditBoard(boardIndex)}
+                className="btn btn-sm btn-warning">
+                Edit
+              </button>
+            )}
+
+            <button
+              onClick={() => handleRemoveBoard(categoryIndex, boardIndex)}
+              className="btn btn-sm btn-error">
+              Remove
+            </button>
+          </div>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
+
+        {/* Task List */}
+        <ul className="mt-3 flex flex-col gap-2 text-xs overflow-auto max-h-30">
+          {item.tasks.map((task: TaskModel, i: number) => (
+            <li key={i} className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={task.is_done}
+                onChange={() =>
+                  handleToggleTaskDone(categoryIndex, boardIndex, i)
+                }
+                className="checkbox checkbox-sm"
+              />
+
+              {editingTaskIndex === i ? (
+                <>
+                  <input
+                    value={editingTaskTitle}
+                    onChange={(e) => setEditingTaskTitle(e.target.value)}
+                    className="input input-sm input-bordered flex-1"
+                  />
+                  <button
+                    onClick={() => {
+                      if (editingTaskTitle.trim()) {
+                        handleEditTask(
+                          categoryIndex,
+                          boardIndex,
+                          i,
+                          editingTaskTitle.trim()
+                        );
+                        setEditingTaskIndex(null);
+                        setEditingTaskTitle("");
+                      }
+                    }}
+                    className="btn btn-xs btn-outline btn-success">
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingTaskIndex(null);
+                      setEditingTaskTitle("");
+                    }}
+                    className="btn btn-xs btn-outline btn-warning">
+                    Cancel
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span
+                    className={`flex-1 ${
+                      task.is_done ? "line-through text-gray-400" : ""
+                    }`}>
+                    {task.title}
+                  </span>
+                  {/* Edit Task Icon */}
+                  <button
+                    onClick={() => {
+                      setEditingTaskIndex(i);
+                      setEditingTaskTitle(task.title);
+                    }}
+                    className="btn btn-ghost btn-xs btn-circle text-warning"
+                    title="Edit Task">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 mx-auto my-auto"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-9.546 9.546-3.536.354.354-3.536 9.546-9.546z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M19.5 13.5V19.5a1.5 1.5 0 01-1.5 1.5h-12A1.5 1.5 0 014.5 19.5v-12A1.5 1.5 0 016 6h6"
+                      />
+                    </svg>
+                  </button>
+                  {/* Remove Task Icon */}
+                  <button
+                    onClick={() =>
+                      handleRemoveTask(categoryIndex, boardIndex, i)
+                    }
+                    className="btn btn-ghost btn-xs btn-circle text-error"
+                    title="Remove Task">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M6 18L18 6M6 6l12 12"
+                      />
+                    </svg>
+                  </button>
+                </>
+              )}
+            </li>
+          ))}
+        </ul>
+
+        {/* Add Task */}
+        <div className="mt-3 flex gap-2">
+          <input
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            type="text"
+            placeholder="New task..."
+            className="input input-sm input-bordered flex-1"
           />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          <button
+            onClick={() => {
+              if (newTaskTitle.trim()) {
+                handleAddTaskToBoard(
+                  categoryIndex,
+                  boardIndex,
+                  newTaskTitle.trim()
+                );
+                setNewTaskTitle("");
+              }
+            }}
+            className="btn btn-sm btn-primary">
+            + Add Task
+          </button>
+        </div>
+      </div>
     </div>
+  );
+}
+
+export default function Boards() {
+  const [categories, setCategories] = useState<CategoryModel[]>([]);
+  const [categoryTitle, setCategoryTitle] = useState("");
+  const [editingCategoryIndex, setEditingCategoryIndex] = useState<
+    number | null
+  >(null);
+  const [editingCategoryTitle, setEditingCategoryTitle] = useState("");
+
+  const [boardTitle, setBoardTitle] = useState("");
+  const [editingBoardIndex, setEditingBoardIndex] = useState<number | null>(
+    null
+  );
+  const [editingBoardTitle, setEditingBoardTitle] = useState("");
+
+  // Category Actions
+  function handleAddCategory() {
+    if (!categoryTitle.trim()) return;
+    const newCategory: CategoryModel = { title: categoryTitle, boards: [] };
+    setCategories((prev) => [...prev, newCategory]);
+    setCategoryTitle("");
+  }
+
+  function handleRemoveCategory(index: number) {
+    setCategories((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleStartEditCategory(index: number) {
+    setEditingCategoryIndex(index);
+    setEditingCategoryTitle(categories[index].title);
+  }
+
+  function handleEditCategory(index: number) {
+    if (!editingCategoryTitle.trim()) return;
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === index ? { ...cat, title: editingCategoryTitle } : cat
+      )
+    );
+    setEditingCategoryIndex(null);
+    setEditingCategoryTitle("");
+  }
+
+  // Board Actions (immutable)
+  function handleAddBoard(categoryIndex: number) {
+    if (!boardTitle.trim()) return;
+    const newBoard: BoardModel = { title: boardTitle, tasks: [] };
+
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? { ...cat, boards: [...cat.boards, newBoard] }
+          : cat
+      )
+    );
+
+    setBoardTitle("");
+  }
+
+  function handleRemoveBoard(categoryIndex: number, boardIndex: number) {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? { ...cat, boards: cat.boards.filter((_, b) => b !== boardIndex) }
+          : cat
+      )
+    );
+  }
+
+  function handleStartEditBoard(boardIndex: number) {
+    setEditingBoardIndex(boardIndex);
+    // editingBoardTitle di-set saat user klik Edit (langsung di Board component)
+  }
+
+  function handleEditBoard(categoryIndex: number, boardIndex: number) {
+    if (!editingBoardTitle.trim()) return;
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              boards: cat.boards.map((b, bi) =>
+                bi === boardIndex ? { ...b, title: editingBoardTitle } : b
+              ),
+            }
+          : cat
+      )
+    );
+    setEditingBoardIndex(null);
+    setEditingBoardTitle("");
+  }
+
+  // Task Actions (immutable)
+  function handleAddTaskToBoard(
+    categoryIndex: number,
+    boardIndex: number,
+    taskTitle: string
+  ) {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              boards: cat.boards.map((b, bi) =>
+                bi === boardIndex
+                  ? {
+                      ...b,
+                      tasks: [...b.tasks, { title: taskTitle, is_done: false }],
+                    }
+                  : b
+              ),
+            }
+          : cat
+      )
+    );
+  }
+
+  function handleToggleTaskDone(
+    categoryIndex: number,
+    boardIndex: number,
+    taskIndex: number
+  ) {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              boards: cat.boards.map((b, bi) =>
+                bi === boardIndex
+                  ? {
+                      ...b,
+                      tasks: b.tasks.map((t, ti) =>
+                        ti === taskIndex ? { ...t, is_done: !t.is_done } : t
+                      ),
+                    }
+                  : b
+              ),
+            }
+          : cat
+      )
+    );
+  }
+
+  function handleEditTask(
+    categoryIndex: number,
+    boardIndex: number,
+    taskIndex: number,
+    newTitle: string
+  ) {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              boards: cat.boards.map((b, bi) =>
+                bi === boardIndex
+                  ? {
+                      ...b,
+                      tasks: b.tasks.map((t, ti) =>
+                        ti === taskIndex ? { ...t, title: newTitle } : t
+                      ),
+                    }
+                  : b
+              ),
+            }
+          : cat
+      )
+    );
+  }
+
+  function handleRemoveTask(
+    categoryIndex: number,
+    boardIndex: number,
+    taskIndex: number
+  ) {
+    setCategories((prev) =>
+      prev.map((cat, i) =>
+        i === categoryIndex
+          ? {
+              ...cat,
+              boards: cat.boards.map((b, bi) =>
+                bi === boardIndex
+                  ? { ...b, tasks: b.tasks.filter((_, ti) => ti !== taskIndex) }
+                  : b
+              ),
+            }
+          : cat
+      )
+    );
+  }
+
+  return (
+    <PrivateComponent>
+      {/* bg-gradient-to-tr from-green-400 to-blue-700 */}
+      <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
+        {/* Add Category */}
+        <div className="font-bold p-4 text-3xl flex gap-3">
+          <input
+            value={categoryTitle}
+            onChange={(e) => setCategoryTitle(e.target.value)}
+            type="text"
+            placeholder="Type category title ..."
+            className="input input-primary"
+          />
+          <button onClick={handleAddCategory} className="btn btn-accent">
+            + Add Category
+          </button>
+        </div>
+
+        {/* Categories in columns */}
+        <div className="flex flex-row gap-6 p-4 w-full h-[calc(100vh)] overflow-auto">
+          {categories.map((cat, catIdx) => (
+            <div key={catIdx} className="flex flex-col gap-3 min-w-[400px]">
+              <div className="flex justify-between items-center">
+                {editingCategoryIndex === catIdx ? (
+                  <input
+                    value={editingCategoryTitle}
+                    onChange={(e) => setEditingCategoryTitle(e.target.value)}
+                    className="input input-bordered input-sm"
+                  />
+                ) : (
+                  <h2 className="text-xl font-bold">{cat.title}</h2>
+                )}
+
+                <div className="flex gap-2">
+                  {editingCategoryIndex === catIdx ? (
+                    <button
+                      onClick={() => handleEditCategory(catIdx)}
+                      className="btn btn-sm btn-success">
+                      Save
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleStartEditCategory(catIdx)}
+                      className="btn btn-sm btn-warning">
+                      Edit
+                    </button>
+                  )}
+
+                  <button
+                    onClick={() => handleRemoveCategory(catIdx)}
+                    className="btn btn-sm btn-error">
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              {/* Add Board under this category */}
+              <div className="flex gap-2">
+                <input
+                  value={boardTitle}
+                  onChange={(e) => setBoardTitle(e.target.value)}
+                  type="text"
+                  placeholder="New board title..."
+                  className="input input-bordered input-sm flex-1"
+                />
+                <button
+                  onClick={() => handleAddBoard(catIdx)}
+                  className="btn btn-sm btn-primary">
+                  + Add Board
+                </button>
+              </div>
+
+              {/* Boards */}
+              {cat.boards.map((b, bIdx) => (
+                <Board
+                  key={bIdx}
+                  categoryIndex={catIdx}
+                  boardIndex={bIdx}
+                  item={b}
+                  editingBoardIndex={editingBoardIndex}
+                  editingBoardTitle={editingBoardTitle}
+                  setEditingBoardTitle={setEditingBoardTitle}
+                  handleStartEditBoard={handleStartEditBoard}
+                  handleEditBoard={handleEditBoard}
+                  handleRemoveBoard={handleRemoveBoard}
+                  handleAddTaskToBoard={handleAddTaskToBoard}
+                  handleToggleTaskDone={handleToggleTaskDone}
+                  handleEditTask={handleEditTask}
+                  handleRemoveTask={handleRemoveTask}
+                />
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    </PrivateComponent>
   );
 }
