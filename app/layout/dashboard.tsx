@@ -60,12 +60,6 @@ export default function DashboardLayout({
             className={pathname.startsWith("/") ? "bg-primary text-white" : ""}>
             <Link href="/">Boards</Link>
           </li>
-          {/* <li
-            className={
-              pathname.startsWith("/profile") ? "bg-primary text-white" : ""
-            }>
-            <Link href="/profile">Profile</Link>
-          </li> */}
           <li>
             <a onClick={handleLogout}>Logout</a>
           </li>

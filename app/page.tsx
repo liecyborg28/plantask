@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import PrivateComponent from "@/app/routes/private";
 
 export interface BoardModel {
@@ -44,7 +44,8 @@ function Board({
         <div className="flex justify-between items-center">
           {/* Board Title */}
           <span className="text-lg font-bold">
-            {editingBoardIndex === boardIndex ? (
+            {editingBoardIndex?.cat === categoryIndex &&
+            editingBoardIndex?.board === boardIndex ? (
               <input
                 value={editingBoardTitle}
                 onChange={(e) => setEditingBoardTitle(e.target.value)}
@@ -57,7 +58,8 @@ function Board({
 
           {/* Actions */}
           <div className="flex items-center gap-2">
-            {editingBoardIndex === boardIndex ? (
+            {editingBoardIndex?.cat === categoryIndex &&
+            editingBoardIndex?.board === boardIndex ? (
               <button
                 onClick={() => handleEditBoard(categoryIndex, boardIndex)}
                 className="btn btn-sm btn-success">
@@ -65,7 +67,7 @@ function Board({
               </button>
             ) : (
               <button
-                onClick={() => handleStartEditBoard(boardIndex)}
+                onClick={() => handleStartEditBoard(categoryIndex, boardIndex)}
                 className="btn btn-sm btn-warning">
                 Edit
               </button>
@@ -132,54 +134,20 @@ function Board({
                     }`}>
                     {task.title}
                   </span>
-                  {/* Edit Task Icon */}
                   <button
                     onClick={() => {
                       setEditingTaskIndex(i);
                       setEditingTaskTitle(task.title);
                     }}
-                    className="btn btn-ghost btn-xs btn-circle text-warning"
-                    title="Edit Task">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4 mx-auto my-auto"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M16.862 3.487a2.25 2.25 0 013.182 3.182l-9.546 9.546-3.536.354.354-3.536 9.546-9.546z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M19.5 13.5V19.5a1.5 1.5 0 01-1.5 1.5h-12A1.5 1.5 0 014.5 19.5v-12A1.5 1.5 0 016 6h6"
-                      />
-                    </svg>
+                    className="btn btn-ghost btn-xs btn-circle text-warning">
+                    ✏️
                   </button>
-                  {/* Remove Task Icon */}
                   <button
                     onClick={() =>
                       handleRemoveTask(categoryIndex, boardIndex, i)
                     }
-                    className="btn btn-ghost btn-xs btn-circle text-error"
-                    title="Remove Task">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
+                    className="btn btn-ghost btn-xs btn-circle text-error">
+                    ❌
                   </button>
                 </>
               )}
@@ -217,18 +185,33 @@ function Board({
 }
 
 export default function Boards() {
-  const [categories, setCategories] = useState<CategoryModel[]>([]);
+  // ✅ Load langsung dari localStorage saat inisialisasi
+  const [categories, setCategories] = useState<CategoryModel[]>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("boards_data");
+      return saved ? JSON.parse(saved) : [];
+    }
+    return [];
+  });
+
   const [categoryTitle, setCategoryTitle] = useState("");
   const [editingCategoryIndex, setEditingCategoryIndex] = useState<
     number | null
   >(null);
   const [editingCategoryTitle, setEditingCategoryTitle] = useState("");
 
-  const [boardTitle, setBoardTitle] = useState("");
-  const [editingBoardIndex, setEditingBoardIndex] = useState<number | null>(
-    null
-  );
+  // boardTitles per kategori
+  const [boardTitles, setBoardTitles] = useState<{ [key: number]: string }>({});
+  const [editingBoardIndex, setEditingBoardIndex] = useState<{
+    cat: number;
+    board: number;
+  } | null>(null);
   const [editingBoardTitle, setEditingBoardTitle] = useState("");
+
+  // ✅ Save ke localStorage tiap kali categories berubah
+  useEffect(() => {
+    localStorage.setItem("boards_data", JSON.stringify(categories));
+  }, [categories]);
 
   // Category Actions
   function handleAddCategory() {
@@ -258,10 +241,12 @@ export default function Boards() {
     setEditingCategoryTitle("");
   }
 
-  // Board Actions (immutable)
+  // Board Actions
   function handleAddBoard(categoryIndex: number) {
-    if (!boardTitle.trim()) return;
-    const newBoard: BoardModel = { title: boardTitle, tasks: [] };
+    const title = boardTitles[categoryIndex] || "";
+    if (!title.trim()) return;
+
+    const newBoard: BoardModel = { title, tasks: [] };
 
     setCategories((prev) =>
       prev.map((cat, i) =>
@@ -271,7 +256,7 @@ export default function Boards() {
       )
     );
 
-    setBoardTitle("");
+    setBoardTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
   }
 
   function handleRemoveBoard(categoryIndex: number, boardIndex: number) {
@@ -284,9 +269,9 @@ export default function Boards() {
     );
   }
 
-  function handleStartEditBoard(boardIndex: number) {
-    setEditingBoardIndex(boardIndex);
-    // editingBoardTitle di-set saat user klik Edit (langsung di Board component)
+  function handleStartEditBoard(categoryIndex: number, boardIndex: number) {
+    setEditingBoardIndex({ cat: categoryIndex, board: boardIndex });
+    setEditingBoardTitle(categories[categoryIndex].boards[boardIndex].title);
   }
 
   function handleEditBoard(categoryIndex: number, boardIndex: number) {
@@ -307,7 +292,7 @@ export default function Boards() {
     setEditingBoardTitle("");
   }
 
-  // Task Actions (immutable)
+  // Task Actions
   function handleAddTaskToBoard(
     categoryIndex: number,
     boardIndex: number,
@@ -408,7 +393,6 @@ export default function Boards() {
 
   return (
     <PrivateComponent>
-      {/* bg-gradient-to-tr from-green-400 to-blue-700 */}
       <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
         {/* Add Category */}
         <div className="font-bold p-4 text-3xl flex gap-3">
@@ -424,7 +408,7 @@ export default function Boards() {
           </button>
         </div>
 
-        {/* Categories in columns */}
+        {/* Categories */}
         <div className="flex flex-row gap-6 p-4 w-full h-[calc(100vh)] overflow-auto">
           {categories.map((cat, catIdx) => (
             <div key={catIdx} className="flex flex-col gap-3 min-w-[400px]">
@@ -462,11 +446,16 @@ export default function Boards() {
                 </div>
               </div>
 
-              {/* Add Board under this category */}
+              {/* Add Board */}
               <div className="flex gap-2">
                 <input
-                  value={boardTitle}
-                  onChange={(e) => setBoardTitle(e.target.value)}
+                  value={boardTitles[catIdx] || ""}
+                  onChange={(e) =>
+                    setBoardTitles((prev) => ({
+                      ...prev,
+                      [catIdx]: e.target.value,
+                    }))
+                  }
                   type="text"
                   placeholder="New board title..."
                   className="input input-bordered input-sm flex-1"
