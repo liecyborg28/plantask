@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from "react";
 import PrivateComponent from "@/app/routes/private";
+import axios from "axios";
 
 export interface ListModel {
   title: string;
@@ -257,19 +258,86 @@ export default function Lists() {
   }
 
   // List Actions
-  function handleAddList(categoryIndex: number) {
+  // function handleAddList(categoryIndex: number) {
+  //   const title = listTitles[categoryIndex] || "";
+  //   if (!title.trim()) return;
+
+  //   const newList: ListModel = { title, tasks: [] };
+
+  //   setCategories((prev) =>
+  //     prev.map((cat, i) =>
+  //       i === categoryIndex ? { ...cat, lists: [...cat.lists, newList] } : cat
+  //     )
+  //   );
+
+  //   setListTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
+  // }
+
+  async function handleAddList(categoryIndex: number) {
     const title = listTitles[categoryIndex] || "";
     if (!title.trim()) return;
 
+    // Tambahkan list kosong terlebih dahulu
     const newList: ListModel = { title, tasks: [] };
-
     setCategories((prev) =>
       prev.map((cat, i) =>
         i === categoryIndex ? { ...cat, lists: [...cat.lists, newList] } : cat
       )
     );
-
     setListTitles((prev) => ({ ...prev, [categoryIndex]: "" }));
+
+    // ======== Prompt AI untuk generate tasks ========
+    const prompt = `
+    Buatkan 3 sampai 5 task sederhana untuk daftar dengan judul: "${title}".
+    Gunakan bahasa yang sama dengan judul list.
+    Format output hanya array JSON murni, contoh:
+    ["Task 1", "Task 2", "Task 3"]
+  `;
+
+    try {
+      const res = await axios.post("/api/gemini", { prompt });
+      let tasks: string[] = [];
+      const text: string = res.data?.text || "";
+
+      if (text) {
+        try {
+          tasks = JSON.parse(text);
+        } catch {
+          // fallback jika output AI tidak valid JSON
+          tasks = text
+            .replace(/[\[\]]/g, "")
+            .split("\n")
+            .map((t: string) => t.replace(/["',]/g, "").trim())
+            .filter(Boolean);
+        }
+      }
+
+      if (tasks.length > 0) {
+        // update list terakhir di category dengan tasks dari AI
+        setCategories((prev) =>
+          prev.map((cat, i) =>
+            i === categoryIndex
+              ? {
+                  ...cat,
+                  lists: cat.lists.map((l, li) =>
+                    li === cat.lists.length - 1
+                      ? {
+                          ...l,
+                          tasks: tasks.map((t) => ({
+                            title: t,
+                            is_done: false,
+                          })),
+                        }
+                      : l
+                  ),
+                }
+              : cat
+          )
+        );
+      }
+    } catch (error: any) {
+      console.error("Error fetch Gemini:", error);
+    }
   }
 
   function handleRemoveList(categoryIndex: number, listIndex: number) {
