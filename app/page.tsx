@@ -90,7 +90,7 @@ function List({
         {/* Move List Dropdown */}
         <div className="mt-2">
           <select
-            className="select select-bordered select-xs w-full"
+            className="select select-bordered select-sm w-full"
             value={categoryIndex}
             onChange={(e) =>
               handleMoveList(categoryIndex, listIndex, Number(e.target.value))

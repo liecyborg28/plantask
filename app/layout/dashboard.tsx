@@ -42,7 +42,8 @@ export default function DashboardLayout({
           </div>
           <div className="flex-1">
             <Link href="/" className="btn btn-ghost text-xl">
-              Plantask
+              <img src="/logo.png" alt="logo" className="h-6" />
+              {/* Plantask */}
             </Link>
           </div>
         </div>
