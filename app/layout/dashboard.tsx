@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useAppDispatch } from "../hooks";
 import { logout } from "../auth/redux/slice";
 import ToastProvider from "../components/auto-hiding-toast/provider";
+import Image from "next/image";
 
 export default function DashboardLayout({
   children,
@@ -23,7 +24,7 @@ export default function DashboardLayout({
       <input id="my-drawer" type="checkbox" className="drawer-toggle" />
       <div className="drawer-content flex flex-col">
         <div className="navbar bg-base-100 shadow-sm">
-          <div className="flex-none">
+          {/* <div className="flex-none">
             <label
               htmlFor="my-drawer"
               className="btn btn-square btn-ghost drawer-button">
@@ -39,10 +40,15 @@ export default function DashboardLayout({
                   d="M4 6h16M4 12h16M4 18h16"></path>
               </svg>
             </label>
-          </div>
+          </div> */}
           <div className="flex-1">
             <Link href="/" className="btn btn-ghost text-xl">
-              Plantask
+              <Image
+                width={100}
+                height={100}
+                src="/logo.png"
+                alt="Plantask Logo"
+              />
             </Link>
           </div>
         </div>
@@ -53,7 +59,7 @@ export default function DashboardLayout({
         </div>
       </div>
 
-      <div className="drawer-side">
+      {/* <div className="drawer-side">
         <label htmlFor="my-drawer" className="drawer-overlay"></label>
         <ul className="menu bg-base-200 text-base-content min-h-full w-80 p-4">
           <li
@@ -64,7 +70,7 @@ export default function DashboardLayout({
             <a onClick={handleLogout}>Logout</a>
           </li>
         </ul>
-      </div>
+      </div> */}
     </div>
   );
 }

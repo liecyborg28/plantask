@@ -518,121 +518,121 @@ export default function Lists() {
   }
 
   return (
-    <PrivateComponent>
-      <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
-        {/* Add Category */}
-        <div className="font-bold p-4 text-3xl flex gap-3">
-          <input
-            value={categoryTitle}
-            onChange={(e) => setCategoryTitle(e.target.value)}
-            type="text"
-            placeholder="Type category title ..."
-            className="input input-primary"
-          />
-          <button onClick={handleAddCategory} className="btn btn-accent">
-            + Add Category
-          </button>
-        </div>
+    // <PrivateComponent>
+    <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
+      {/* Add Category */}
+      <div className="font-bold p-4 text-3xl flex gap-3">
+        <input
+          value={categoryTitle}
+          onChange={(e) => setCategoryTitle(e.target.value)}
+          type="text"
+          placeholder="Type category title ..."
+          className="input input-primary"
+        />
+        <button onClick={handleAddCategory} className="btn btn-accent">
+          + Add Category
+        </button>
+      </div>
 
-        {/* Categories */}
-        <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
-          {categories.length < 1 && (
-            <div className="w-full flex justify-center items-center text-3xl">
-              You haven’t created any lists yet
-            </div>
-          )}
-          {categories.map((cat, catIdx) => (
-            <div key={catIdx} className="flex flex-col gap-3 min-w-[400px]">
-              <div className="flex gap-2 justify-between items-center">
+      {/* Categories */}
+      <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
+        {categories.length < 1 && (
+          <div className="w-full flex justify-center items-center text-3xl">
+            You haven’t created any lists yet
+          </div>
+        )}
+        {categories.map((cat, catIdx) => (
+          <div key={catIdx} className="flex flex-col gap-3 min-w-[400px]">
+            <div className="flex gap-2 justify-between items-center">
+              {editingCategoryIndex === catIdx ? (
+                <input
+                  value={editingCategoryTitle}
+                  onChange={(e) => setEditingCategoryTitle(e.target.value)}
+                  className="input input-bordered input-sm"
+                />
+              ) : (
+                <h2 className="text-xl font-bold">{cat.title}</h2>
+              )}
+
+              <div className="flex gap-2">
                 {editingCategoryIndex === catIdx ? (
-                  <input
-                    value={editingCategoryTitle}
-                    onChange={(e) => setEditingCategoryTitle(e.target.value)}
-                    className="input input-bordered input-sm"
-                  />
+                  <button
+                    onClick={() => handleEditCategory(catIdx)}
+                    className="btn btn-sm btn-success btn-outline">
+                    Save
+                  </button>
                 ) : (
-                  <h2 className="text-xl font-bold">{cat.title}</h2>
+                  <button
+                    onClick={() => handleStartEditCategory(catIdx)}
+                    className="btn btn-sm btn-warning btn-outline">
+                    Edit
+                  </button>
                 )}
 
-                <div className="flex gap-2">
-                  {editingCategoryIndex === catIdx ? (
-                    <button
-                      onClick={() => handleEditCategory(catIdx)}
-                      className="btn btn-sm btn-success btn-outline">
-                      Save
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleStartEditCategory(catIdx)}
-                      className="btn btn-sm btn-warning btn-outline">
-                      Edit
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handleRemoveCategory(catIdx)}
-                    className="btn btn-sm btn-error btn-outline">
-                    Remove
-                  </button>
-                </div>
-              </div>
-
-              {/* Add List */}
-              <div className="flex gap-3 items-center mt-5">
-                <div className="flex w-full gap-1">
-                  <input
-                    value={listTitles[catIdx] || ""}
-                    onChange={(e) =>
-                      setListTitles((prev) => ({
-                        ...prev,
-                        [catIdx]: e.target.value,
-                      }))
-                    }
-                    type="text"
-                    placeholder="New list title..."
-                    className="input input-bordered input-sm flex-1"
-                  />
-                  <div
-                    className="tooltip"
-                    data-tip="AI will suggest tasks automatically whenever you create a new list!">
-                    <div className="w-4 h-4 text-xs text-white border border-white rounded-full flex justify-center items-center cursor-pointer">
-                      i
-                    </div>
-                  </div>
-                </div>
                 <button
-                  onClick={() => handleAddList(catIdx)}
-                  className="btn btn-sm btn-primary">
-                  + Add List
+                  onClick={() => handleRemoveCategory(catIdx)}
+                  className="btn btn-sm btn-error btn-outline">
+                  Remove
                 </button>
               </div>
-
-              {/* Lists */}
-              {cat.lists.map((b, bIdx) => (
-                <List
-                  key={bIdx}
-                  categoryIndex={catIdx}
-                  listIndex={bIdx}
-                  item={b}
-                  categories={categories}
-                  editingListIndex={editingListIndex}
-                  editingListTitle={editingListTitle}
-                  setEditingListTitle={setEditingListTitle}
-                  handleStartEditList={handleStartEditList}
-                  handleEditList={handleEditList}
-                  handleRemoveList={handleRemoveList}
-                  handleAddTaskToList={handleAddTaskToList}
-                  handleToggleTaskDone={handleToggleTaskDone}
-                  handleEditTask={handleEditTask}
-                  handleRemoveTask={handleRemoveTask}
-                  handleMoveList={handleMoveList}
-                  loadingSuggestions={loadingSuggestions}
-                />
-              ))}
             </div>
-          ))}
-        </div>
+
+            {/* Add List */}
+            <div className="flex gap-3 items-center mt-5">
+              <div className="flex w-full gap-1">
+                <input
+                  value={listTitles[catIdx] || ""}
+                  onChange={(e) =>
+                    setListTitles((prev) => ({
+                      ...prev,
+                      [catIdx]: e.target.value,
+                    }))
+                  }
+                  type="text"
+                  placeholder="New list title..."
+                  className="input input-bordered input-sm flex-1"
+                />
+                <div
+                  className="tooltip"
+                  data-tip="AI will suggest tasks automatically whenever you create a new list!">
+                  <div className="w-4 h-4 text-xs text-white border border-white rounded-full flex justify-center items-center cursor-pointer">
+                    i
+                  </div>
+                </div>
+              </div>
+              <button
+                onClick={() => handleAddList(catIdx)}
+                className="btn btn-sm btn-primary">
+                + Add List
+              </button>
+            </div>
+
+            {/* Lists */}
+            {cat.lists.map((b, bIdx) => (
+              <List
+                key={bIdx}
+                categoryIndex={catIdx}
+                listIndex={bIdx}
+                item={b}
+                categories={categories}
+                editingListIndex={editingListIndex}
+                editingListTitle={editingListTitle}
+                setEditingListTitle={setEditingListTitle}
+                handleStartEditList={handleStartEditList}
+                handleEditList={handleEditList}
+                handleRemoveList={handleRemoveList}
+                handleAddTaskToList={handleAddTaskToList}
+                handleToggleTaskDone={handleToggleTaskDone}
+                handleEditTask={handleEditTask}
+                handleRemoveTask={handleRemoveTask}
+                handleMoveList={handleMoveList}
+                loadingSuggestions={loadingSuggestions}
+              />
+            ))}
+          </div>
+        ))}
       </div>
-    </PrivateComponent>
+    </div>
+    // </PrivateComponent>
   );
 }

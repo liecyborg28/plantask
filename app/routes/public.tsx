@@ -22,7 +22,7 @@ export default function PublicComponent({
   }, [dispatch]);
 
   useEffect(() => {
-    if (user) {
+    if (!user) {
       router.replace(MAIN_PAGE);
     }
   }, [user]);
