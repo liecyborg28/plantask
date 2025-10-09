@@ -521,12 +521,12 @@ export default function Lists() {
     // <PrivateComponent>
     <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
       {/* Add Category */}
-      <div className="font-bold p-4 text-3xl flex gap-3">
+      <div className="p-4 text-3xl flex gap-3">
         <input
           value={categoryTitle}
           onChange={(e) => setCategoryTitle(e.target.value)}
           type="text"
-          placeholder="Type category title ..."
+          placeholder="Type category title..."
           className="input input-primary"
         />
         <button onClick={handleAddCategory} className="btn btn-accent">
