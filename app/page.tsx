@@ -4,6 +4,7 @@
 import { useState, useEffect } from "react";
 import PrivateComponent from "@/app/routes/private";
 import axios from "axios";
+import Image from "next/image";
 
 export interface ListModel {
   title: string;
@@ -90,7 +91,7 @@ function List({
         {/* Move List Dropdown */}
         <div className="mt-2">
           <select
-            className="select select-bordered select-xs w-full"
+            className="select select-bordered select-sm w-full rounded-md p-2"
             value={categoryIndex}
             onChange={(e) =>
               handleMoveList(categoryIndex, listIndex, Number(e.target.value))
@@ -537,8 +538,16 @@ export default function Lists() {
       {/* Categories */}
       <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
         {categories.length < 1 && (
-          <div className="w-full flex justify-center items-center text-3xl">
-            You haven’t created any lists yet
+          <div className="w-full flex flex-col justify-center items-center">
+            <Image
+              width={300}
+              height={300}
+              src="/logo.png"
+              alt={"Plantask Logo"}
+            />
+            <div className=" items-center text-3xl pt-5">
+              You haven’t created any lists yet
+            </div>
           </div>
         )}
         {categories.map((cat, catIdx) => (
