@@ -523,7 +523,7 @@ export default function Lists() {
     // <PrivateComponent>
     <div className="flex flex-col w-full h-[calc(100vh-64px)] bg-slate-800">
       {/* Add Category */}
-      <div className="p-4 text-3xl flex gap-3">
+      <div className="p-4 text-3xl flex gap-3 w-full justify-end">
         <input
           value={categoryTitle}
           onChange={(e) => setCategoryTitle(e.target.value)}
@@ -540,13 +540,13 @@ export default function Lists() {
       <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
         {categories.length < 1 && (
           <div className="w-full flex flex-col justify-center items-center">
-            {/* <Image
+            <Image
               width={300}
               height={300}
               src="/logo.png"
               alt={"Plantask Logo"}
-            /> */}
-            <img className="w-100" src="/logo.png" alt="Plantask Logo" />
+            />
+            {/* <img className="w-100" src="/logo.png" alt="Plantask Logo" /> */}
             <div className="items-center text-3xl pt-5 text-center">
               You haven’t created any lists yet
             </div>
