@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
@@ -539,13 +540,14 @@ export default function Lists() {
       <div className="flex flex-row gap-10 p-4 w-full h-[calc(100vh)] overflow-auto mt-10">
         {categories.length < 1 && (
           <div className="w-full flex flex-col justify-center items-center">
-            <Image
+            {/* <Image
               width={300}
               height={300}
               src="/logo.png"
               alt={"Plantask Logo"}
-            />
-            <div className="items-center text-3xl pt-5">
+            /> */}
+            <img className="w-100" src="/logo.png" alt="Plantask Logo" />
+            <div className="items-center text-3xl pt-5 text-center">
               You haven’t created any lists yet
             </div>
           </div>
