@@ -545,7 +545,7 @@ export default function Lists() {
               src="/logo.png"
               alt={"Plantask Logo"}
             />
-            <div className=" items-center text-3xl pt-5">
+            <div className="items-center text-3xl pt-5">
               You haven’t created any lists yet
             </div>
           </div>
